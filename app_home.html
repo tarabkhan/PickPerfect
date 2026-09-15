@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PickPerfect</title>
+    <link rel="icon" href="Photo1.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="app_style.css"> 
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/"><span class="brand-icon"><i class="bi bi-stars"></i></span>PickPerfect</a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <form class="d-flex gap-2 ms-auto mt-3 mt-lg-0 align-items-center" role="search" method="POST" action="/recommend">
+                    <select name="customer_id" class="form-select form-select-md border-2 shadow-none" style="min-width: 200px;" required>
+                        <option value="">Select CustomerID</option>
+                        {% for cid in customers %}
+                        <option value="{{ cid }}" {% if cid == selected_customer %}selected{% endif %}>
+                            CustomerID {{ cid }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <select name="product" class="form-select form-select-md border-2 shadow-none" style="min-width: 300px;" required>
+                        <option value="">Select Product</option>
+                        {% for product in products %}
+                        <option value="{{ product }}" {% if product == selected_product %}selected{% endif %}>
+                            {{ product }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-dark rounded-circle flex-shrink-0" style="width: 42px; height: 42px;" type="submit">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="display-3 fw-bold mb-3">Discover.<br>Predict.<br><span class="text-gradient">PickPerfect.</span></h1>
+                    <p class="lead text-light opacity-75">
+                        An intelligent product recommendation system designed to help customers discover products that matter through advanced algorithmic recommendation models.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <img src="Photo1.png" alt="PickPerfect Platform Visual" class="img-fluid hero-img" onerror="this.src='https://placehold.co/280x280/1e293b/FFF?text=PickPerfect';">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container my-5">
+
+        <!-- 01. Project Workflow -->
+        <section id="workflow" class="mb-5 pt-4">
+            <h2 class="section-title text-primary">01. Project Workflow</h2>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 p-3">
+                        <div class="card-body">
+                            <div class="workflow-number mb-3">01</div>
+                            <h5 class="card-title fw-bold">Importing Libraries</h5>
+                            <p class="card-text text-muted">Loading Python, data science, visualization and machine learning libraries.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 p-3">
+                        <div class="card-body">
+                            <div class="workflow-number mb-3">02</div>
+                            <h5 class="card-title fw-bold">Data Collection</h5>
+                            <p class="card-text text-muted">Collecting and preparing transaction data for recommendation analysis.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 p-3">
+                        <div class="card-body">
+                            <div class="workflow-number mb-3">03</div>
+                            <h5 class="card-title fw-bold">Exploratory Data Analysis</h5>
+                            <p class="card-text text-muted">Understanding distributions, patterns, outliers and purchasing behavior.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 p-3">
+                        <div class="card-body">
+                            <div class="workflow-number mb-3">04</div>
+                            <h5 class="card-title fw-bold">Model Training</h5>
+                            <p class="card-text text-muted">Training multiple recommendation algorithms using historical customer interactions.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 p-3">
+                        <div class="card-body">
+                            <div class="workflow-number mb-3">05</div>
+                            <h5 class="card-title fw-bold">Model Evaluation</h5>
+                            <p class="card-text text-muted">Comparing models using precision, recall, hit rate, coverage and personalization.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 p-3">
+                        <div class="card-body">
+                            <div class="workflow-number mb-3">06</div>
+                            <h5 class="card-title fw-bold">Model Serialization</h5>
+                            <p class="card-text text-muted">Saving trained models so they can be integrated into production applications.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 02. Tech Stack & Libraries -->
+        <section id="techstack" class="mb-5 pt-4">
+            <h2 class="section-title text-primary">02. Tech Stack & Libraries</h2>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card h-100 p-4">
+                        <h4 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow me-2 text-primary"></i>Data Science</h4>
+                        <div>
+                            <span class="badge-tech">Python</span>
+                            <span class="badge-tech">NumPy</span>
+                            <span class="badge-tech">Pandas</span>
+                            <span class="badge-tech">Matplotlib</span>
+                            <span class="badge-tech">Seaborn</span>
+                            <span class="badge-tech">Scikit-Learn</span>
+                            <span class="badge-tech">PyTorch</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 p-4">
+                        <h4 class="fw-bold mb-3"><i class="bi bi-tools me-2 text-primary"></i>Web Development</h4>
+                        <div>
+                            <span class="badge-tech">HTML5</span>
+                            <span class="badge-tech">CSS3</span>
+                            <span class="badge-tech">Bootstrap</span>
+                            <span class="badge-tech">Flask</span>
+                            <span class="badge-tech">Git & GitHub</span>
+                            <span class="badge-tech">VS Code</span>
+                            <span class="badge-tech">Jupyter</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 03. Data Features Collected -->
+        <section class="mb-5 pt-4">
+            <h2 class="section-title text-primary">03. Data Features Collected</h2>
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold text-primary mb-0">541K+</h3>
+                        <small class="text-muted fw-semibold">Transactions</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold text-primary mb-0">4.2K</h3>
+                        <small class="text-muted fw-semibold">Unique Users</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold text-primary mb-0">3.8K</h3>
+                        <small class="text-muted fw-semibold">Unique Products</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold text-primary mb-0">4</h3>
+                        <small class="text-muted fw-semibold">Core Features</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">CustomerID</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">Product</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">Quantity</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">Price</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">InvoiceNo</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">StockCode</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">Date</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="p-3 stat-card card">
+                        <h3 class="fw-bold mb-0">Time</h3>
+                    </div>
+                </div>
+            </div>
+            
+        </section>
+
+        <!-- 04. Exploratory Data Analysis -->
+        <section id="eda" class="mb-5 pt-4">
+            <h2 class="section-title text-primary">04. Exploratory Data Analysis</h2>
+            
+            <div class="row g-3 mb-4 text-center">
+                <div class="col-md-4">
+                    <div class="card p-3 bg-white">
+                        <small class="text-muted d-block">Analysis Type</small>
+                        <strong class="fs-5">Numerical Analysis</strong>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 bg-white">
+                        <small class="text-muted d-block">Quality Check</small>
+                        <strong class="fs-5">Outlier Detection</strong>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 bg-white">
+                        <small class="text-muted d-block">Product Analysis</small>
+                        <strong class="fs-5">Top 20 Products</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 p-4">
+                        <h5 class="fw-bold"><i class="bi bi-box-seam me-2 text-primary"></i>Quantity Distribution</h5>
+                        <p class="text-muted mb-0">Transaction quantities reveal the purchasing frequency and help identify unusual bulk-order behavior.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 p-4">
+                        <h5 class="fw-bold"><i class="bi bi-tags me-2 text-primary"></i>Price Distribution</h5>
+                        <p class="text-muted mb-0">Price analysis provides insight into product value ranges and helps detect unusual pricing observations.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100 p-4">
+                        <h5 class="fw-bold"><i class="bi bi-star me-2 text-primary"></i>Top Products</h5>
+                        <p class="text-muted mb-0">Frequently purchased products provide the foundation for popularity-based recommendation strategies.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 05. Model Architecture & Training -->
+        <section id="models" class="mb-5 pt-4">
+            <h2 class="section-title text-primary">05. Model Architecture & Training</h2>
+            
+            <div class="row g-4 mb-4">
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card h-100 p-4 border-primary">
+                        <h5 class="fw-bold">Hybrid Recommendation System</h5>
+                        <p class="small text-muted">Delivers smarter recommendations by blending collaborative and content-based filtering models.</p>
+                        <ul class="small text-muted ps-3 mb-3">
+                            <li>Combines collaborative & content features</li>
+                            <li>Maximizes recommendation accuracy</li>
+                            <li>Reduces data sparsity limitations</li>
+                            <li>Highly diverse personalized suggestions</li>
+                        </ul>
+                        <div class="flow-box mt-auto text-center">
+                            User Behavior + Product Content → Hybrid Engine
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <img src="Photo2.png" class="img-fluid rounded shadow-sm" style="max-height: 100%; width: auto;">
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <img src="Photo3.png" class="img-fluid rounded shadow-sm" style="max-height: 100%; width: auto;">
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card h-100 p-4">
+                        <h5 class="fw-bold">Popularity-Based Filtering</h5>
+                        <p class="small text-muted">Recommends top-trending and globally popular products when user interaction data is unavailable.</p>
+                        <ul class="small text-muted ps-3 mb-3">
+                            <li>Loved by most customers globally</li>
+                            <li>Solves cold-start problems for new users</li>
+                            <li>Based on purchase frequency metrics</li>
+                            <li>Fast and lightweight computation</li>
+                        </ul>
+                        <div class="flow-box mt-auto text-center">
+                            Purchase Frequency → Product Ranking → Top Recommendations
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card h-100 p-4">
+                        <h5 class="fw-bold">User-Based Collaborative Filtering</h5>
+                        <p class="small text-muted">Identifies users with similar purchasing histories and recommends products preferred by similar users.</p>
+                        <ul class="small text-muted ps-3 mb-3">
+                            <li>Clusters users with similar tastes</li>
+                            <li>Leverages historical purchase patterns</li>
+                            <li>Personalized without item metadata</li>
+                            <li>Adapts dynamically as behavior shifts</li>
+                        </ul>
+                        <div class="flow-box mt-auto text-center">
+                            User → Similar Users → Recommended Products
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <img src="Photo4.png" class="img-fluid rounded shadow-sm" style="max-height: 100%; width: auto;">
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <img src="Photo5.png" class="img-fluid rounded shadow-sm" style="max-height: 100%; width: auto;">
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card h-100 p-4">
+                        <h5 class="fw-bold">Item-Based Collaborative Filtering</h5>
+                        <p class="small text-muted">Discovers products that are frequently bought together across customer transactions.</p>
+                        <ul class="small text-muted ps-3 mb-3">
+                            <li>Finds closely related catalog items</li>
+                            <li>High stability for large user bases</li>
+                            <li>Ideal for "Frequently Bought Together"</li>
+                            <li>Scalable item matrix computation</li>
+                        </ul>
+                        <div class="flow-box mt-auto text-center">
+                            Purchased Item → Similar Items → Recommendations
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <div class="card h-100 p-4">
+                        <h5 class="fw-bold">Content-Based Filtering</h5>
+                        <p class="small text-muted">Matches product metadata, titles and descriptions using feature extraction and similarity techniques.</p>
+                        <ul class="small text-muted ps-3 mb-3">
+                            <li>Compares rich product characteristics</li>
+                            <li>Independent of other users' actions</li>
+                            <li>Effective for niche product discovery</li>
+                            <li>Transparent and explainable</li>
+                        </ul>
+                        <div class="flow-box mt-auto text-center">
+                            Product Features → Feature Extraction → Similarity → Recommendations
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 col-lg-6">
+                    <img src="Photo6.png" class="img-fluid rounded shadow-sm" style="max-height: 100%; width: auto;">
+                </div>
+
+            </div>
+
+            <!-- Strategy Highlights -->
+            <div class="card p-4 bg-light border-0">
+                <h5 class="fw-bold mb-3">Recommendation Strategy Summary</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <h6><strong>Fast & Simple</strong></h6>
+                        <p class="small text-muted mb-0">Popularity-based recommendations provide a lightweight solution for cold-start scenarios.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><strong>Highly Personalized</strong></h6>
+                        <p class="small text-muted mb-0">Collaborative filtering adapts recommendations based on customer behavior and similar users.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><strong>Best Overall Balance</strong></h6>
+                        <p class="small text-muted mb-0">The Hybrid system combines multiple signals to achieve a strong balance between accuracy and personalization.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 06. Model Evaluation Results -->
+        <section id="evaluation" class="mb-5 pt-4">
+            <h2 class="section-title text-primary">06. Model Evaluation Results</h2>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-2">
+                    <div class="card p-3 stat-card">
+                        <h3 class="fw-bold mb-0">1.03%</h3>
+                        <small class="text-primary">F1 Score</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="card p-3 stat-card">
+                        <h3 class="fw-bold mb-0">22.92%</h3>
+                        <small class="text-primary">HitRate</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="card p-3 stat-card">
+                        <h3 class="fw-bold mb-0">1.73%</h3>
+                        <small class="text-primary">NDCG</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="card p-3 stat-card">
+                        <h3 class="fw-bold mb-0">0.42</h3>
+                        <small class="text-primary">MAP</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="card p-3 stat-card">
+                        <h3 class="fw-bold mb-0">66.74%</h3>
+                        <small class="text-primary">Coverage</small>
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <div class="card p-3 stat-card">
+                        <h3 class="fw-bold mb-0">94.13%</h3>
+                        <small class="text-primary">Personalization</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                    <small>&copy; 2026 PickPerfect. Product Recommendation System.</small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <small>Built with Data Science & Machine Learning</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
