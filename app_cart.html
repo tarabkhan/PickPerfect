@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PickPerfect | Cart</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="app_style.css">
+</head>
+<body class="d-flex flex-column min-vh-100">
+<nav class="navbar navbar-dark fixed-top"><div class="container">
+<a class="navbar-brand" href="/">✦ PickPerfect</a>
+<a href="/" class="btn btn-light">Continue Shopping</a>
+</div></nav>
+<main class="container" style="padding-top:120px;padding-bottom:60px;">
+<h1 class="display-5 fw-bold mb-2">Your Cart</h1>
+<p class="text-muted mb-4">{{ cart_count }} item(s)</p>
+{% if cart_items %}
+<div class="row g-4">
+<div class="col-lg-8">
+{% for item in cart_items %}
+<div class="glass-card p-4 mb-3">
+<div class="d-flex justify-content-between gap-3">
+<div class="flex-grow-1"><h5 class="fw-bold">{{ item.product }}</h5><div class="text-muted small">StockCode: {{ item.details.get('stockcode','N/A') }}</div><div class="mt-2 fw-bold">₹{{ '{:,.2f}'.format(item.price) }} each</div></div>
+<div class="text-end"><div class="fw-bold mb-2">₹{{ '{:,.2f}'.format(item.subtotal) }}</div>
+<form method="POST" action="/cart/update" class="d-flex gap-2 mb-2"><input type="hidden" name="product" value="{{ item.product }}"><input type="number" name="quantity" min="1" max="99" value="{{ item.quantity }}" class="form-control" style="width:85px"><button class="btn btn-outline-dark">Update</button></form>
+<form method="POST" action="/cart/remove"><input type="hidden" name="product" value="{{ item.product }}"><button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> Remove</button></form>
+</div></div></div>
+{% endfor %}
+</div>
+<div class="col-lg-4"><div class="glass-card p-4">
+<h5 class="fw-bold">Order Summary</h5><div class="d-flex justify-content-between my-3"><span>Subtotal</span><strong>₹{{ '{:,.2f}'.format(cart_total) }}</strong></div>
+<hr><div class="d-flex justify-content-between fs-5"><strong>Total</strong><strong>₹{{ '{:,.2f}'.format(cart_total) }}</strong></div>
+<a href="/checkout" class="btn btn-dark w-100 mt-4 py-3">Proceed to Checkout</a>
+</div></div>
+</div>
+{% else %}
+<div class="glass-card p-5 text-center"><h3>Your cart is empty</h3><p class="text-muted">Add products from your recommendations.</p><a href="/" class="btn btn-dark">Start Shopping</a></div>
+{% endif %}
+</main></body></html>
