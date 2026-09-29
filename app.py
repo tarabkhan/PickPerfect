@@ -6,7 +6,7 @@ import pandas as pd
 import torch
 import torch.nn as nn
 
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -335,6 +335,48 @@ def remove_from_cart():
     cart.pop(product, None)
     session["cart"] = cart
     return redirect(url_for("cart"))
+
+
+
+@app.post("/buy-now")
+def buy_now():
+    product = request.form.get("product", "").strip()
+    if product not in product_details:
+        flash("Product could not be found.", "danger")
+        return redirect(url_for("home"))
+    try:
+        quantity = max(1, int(request.form.get("quantity", 1)))
+    except (TypeError, ValueError):
+        quantity = 1
+    details = product_details[product]
+    price = float(details.get("price", 0.0))
+    return render_template(
+        "buy_now.html",
+        product=product,
+        quantity=quantity,
+        price=price,
+        subtotal=price * quantity,
+        stockcode=details.get("stockcode", "N/A")
+    )
+
+
+@app.post("/order/place")
+def place_order():
+    product = request.form.get("product", "").strip()
+    try:
+        quantity = max(1, int(request.form.get("quantity", 1)))
+    except (TypeError, ValueError):
+        quantity = 1
+    if product not in product_details:
+        return redirect(url_for("home"))
+    price = float(product_details[product].get("price", 0.0))
+    order_total = price * quantity
+    return render_template(
+        "order_success.html",
+        product=product,
+        quantity=quantity,
+        order_total=order_total
+    )
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
