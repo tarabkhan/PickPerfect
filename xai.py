@@ -1,25 +1,16 @@
-"""Explainable AI for Recommendation-main.
-
-Every explanation is generated from the actual scoring signals used for the
-individual product. No new model or data file is created by this module.
-"""
 from __future__ import annotations
 
 SIGNAL_LABELS = {
-    "ncf": ("Neural Collaborative Filtering", "Personalized match from the learned customer-product interaction pattern."),
-    "content": ("Product Similarity", "Similarity to the product you selected."),
-    "popular": ("Catalog Popularity", "Popularity of this product across the catalogue."),
+    "ncf": ("Neural CF", "Personalized from history."),
+    "content": ("Product Similarity", "Similarity to product."),
+    "popular": ("Catalog Popularity", "Popular across catalogue."),
 }
 
 SIGNAL_ORDER = ["ncf", "content", "popular"]
 
 
 def explain(ai_score_result):
-    """Return detailed, product-specific XAI information.
-
-    Values come directly from compute_ai_score(). The displayed contribution
-    is the amount that signal contributes to the final 0-100 AI score.
-    """
+    
     if not ai_score_result:
         return {
             "summary": "Not enough data is available to explain this recommendation.",
@@ -66,11 +57,11 @@ def explain(ai_score_result):
         # Only cite a signal as a reason when it actually contributes.
         if value >= 0.15:
             if key == "ncf":
-                detail = f"{description} Signal strength: {signal_score:.0f}/100."
+                detail = f"{description}"
             elif key == "content":
-                detail = f"{description} Similarity signal: {signal_score:.0f}/100."
+                detail = f"{description}"
             else:
-                detail = f"{description} Popularity signal: {signal_score:.0f}/100."
+                detail = f"{description}"
             reasons.append({"label": label, "detail": detail})
 
     if not reasons:
