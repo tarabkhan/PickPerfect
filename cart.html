@@ -17,8 +17,22 @@
 {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
 {% if cart_items %}<div class="row g-4"><div class="col-lg-8">
 {% for item in cart_items %}<div class="mono-card mb-3"><div class="d-flex flex-column flex-md-row justify-content-between gap-3"><div class="flex-grow-1"><h5 class="fw-bold mb-2">{{ item.product }}</h5><div class="text-muted small mb-2">Product ID: {{ item.stockcode }}</div><div class="fw-semibold">₹{{ '{:,.2f}'.format(item.price) }} each</div></div>
-<div class="d-flex align-items-center gap-2"><form method="POST" action="/cart/update" class="d-flex gap-2"><input type="hidden" name="product" value="{{ item.product }}"><input type="number" name="quantity" min="1" value="{{ item.quantity }}" class="form-control" style="width:90px;"><button class="btn btn-outline-dark" type="submit">Update</button></form>
-<form method="POST" action="/cart/remove"><input type="hidden" name="product" value="{{ item.product }}"><button class="btn btn-outline-danger" type="submit" title="Remove"><i class="bi bi-trash"></i></button></form></div></div>
+<div class="d-flex align-items-center gap-2 flex-wrap">
+<form method="POST" action="/cart/update" class="d-flex gap-2">
+<input type="hidden" name="product" value="{{ item.product }}">
+<input type="number" name="quantity" min="1" value="{{ item.quantity }}" class="form-control" style="width:90px;">
+<button class="btn btn-outline-dark" type="submit">Update</button>
+</form>
+<form method="POST" action="/buy-now" class="d-flex">
+<input type="hidden" name="product" value="{{ item.product }}">
+<input type="hidden" name="quantity" value="{{ item.quantity }}">
+<button class="btn btn-dark" type="submit"><i class="bi bi-bag-check me-1"></i> Buy Now</button>
+</form>
+<form method="POST" action="/cart/remove">
+<input type="hidden" name="product" value="{{ item.product }}">
+<button class="btn btn-outline-danger" type="submit" title="Remove"><i class="bi bi-trash"></i></button>
+</form>
+</div></div>
 <div class="border-top mt-3 pt-3 d-flex justify-content-between"><span>Subtotal</span><strong>₹{{ '{:,.2f}'.format(item.subtotal) }}</strong></div></div>{% endfor %}
 </div><div class="col-lg-4"><div class="mono-card sticky-lg-top" style="top:110px;"><span class="section-tag">Order Summary</span><div class="d-flex justify-content-between mt-3 mb-2"><span>Items</span><span>{{ cart_count }}</span></div><div class="border-top pt-3 d-flex justify-content-between fs-5"><strong>Total</strong><strong>₹{{ '{:,.2f}'.format(cart_total) }}</strong></div><div class="small text-muted mt-3">This demo checkout does not process real payments.</div><a href="/recommend" class="btn btn-dark w-100 mt-3">Continue Shopping</a></div></div></div>
 {% else %}<div class="mono-card text-center py-5"><i class="bi bi-cart-x fs-1"></i><h3 class="mt-3">Your cart is empty</h3><p class="text-muted">Add a recommended product to see it here.</p><a href="/recommend" class="btn btn-dark">Explore Recommendations</a></div>{% endif %}
