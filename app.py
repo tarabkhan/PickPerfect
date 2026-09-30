@@ -389,11 +389,28 @@ def home():
         product_details=product_details
     )
 
-@app.route("/recommend", methods=["POST"])
+@app.route("/recommend", methods=["GET", "POST"])
 def recommend():
-    selected_product = request.form.get("product")
-    selected_customer = request.form.get("customer_id", DEFAULT_CUSTOMER_ID)
-    customer_id = int(selected_customer) if selected_customer else None
+    if request.method == "POST":
+        selected_product = request.form.get("product")
+        selected_customer = request.form.get("customer_id", DEFAULT_CUSTOMER_ID)
+        customer_id = int(selected_customer) if selected_customer else None
+
+        # Remember the current recommendation page so the user can return to it
+        # from the cart without having to select the product/customer again.
+        session["last_recommendation"] = {
+            "product": selected_product,
+            "customer_id": customer_id,
+        }
+        session.modified = True
+    else:
+        last_recommendation = session.get("last_recommendation", {})
+        selected_product = last_recommendation.get("product")
+        customer_id = last_recommendation.get("customer_id", DEFAULT_CUSTOMER_ID)
+
+        # If there is no previous recommendation yet, start from the home page.
+        if not selected_product:
+            return redirect(url_for("home"))
 
     popular_recommendations = popularity_recommend()
     ncf_recommendations = ncf_recommend(customer_id) if customer_id else []
