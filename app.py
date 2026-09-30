@@ -22,6 +22,11 @@ use_cols = ["Product", "Quantity", "Price", "CustomerID", "StockCode", "Time"]
 DATA_FILE = "data.csv" if os.path.exists("data.csv") else "cleaned_data.csv"
 df = pd.read_csv(DATA_FILE, encoding="latin1", usecols=use_cols)
 
+# Normalize product names once, before building any recommendation artifacts.
+# This keeps product lookup, prices, stock codes, recommendations, and cart
+# actions consistent even when the source CSV contains leading/trailing spaces.
+df["Product"] = df["Product"].astype(str).str.strip()
+
 df["StockCode"] = df["StockCode"].astype('int32')
 df["Quantity"] = df["Quantity"].astype('int16')
 df["Price"] = df["Price"].astype('float32')
@@ -61,8 +66,7 @@ customers = sorted(df["CustomerID"].dropna().astype(int).unique().tolist())
 DEFAULT_CUSTOMER_ID = 17850
 
 product_details = (
-    df.assign(Product=df["Product"].astype(str).str.strip())
-    .drop_duplicates(subset=["Product"])[["Product", "Price", "StockCode"]]
+    df.drop_duplicates(subset=["Product"])[["Product", "Price", "StockCode"]]
     .set_index("Product")
     .to_dict(orient="index")
 )
