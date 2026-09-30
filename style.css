@@ -165,3 +165,25 @@ footer {
     padding: 24px 0;
     margin-top: auto;
 }
+
+/* Navbar visibility fix: the active pages use a light navbar. */
+.navbar {
+    background-color: #ffffff !important;
+}
+
+.navbar .navbar-brand,
+.navbar .navbar-brand:visited {
+    color: #09090b !important;
+}
+
+.navbar .navbar-brand:hover {
+    color: #27272a !important;
+}
+
+.navbar .navbar-toggler {
+    color: #09090b !important;
+}
+
+.navbar .navbar-toggler-icon {
+    filter: invert(1);
+}
