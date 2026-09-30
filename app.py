@@ -61,7 +61,8 @@ customers = sorted(df["CustomerID"].dropna().astype(int).unique().tolist())
 DEFAULT_CUSTOMER_ID = 17850
 
 product_details = (
-    df.drop_duplicates(subset=["Product"])[["Product", "Price", "StockCode"]]
+    df.assign(Product=df["Product"].astype(str).str.strip())
+    .drop_duplicates(subset=["Product"])[["Product", "Price", "StockCode"]]
     .set_index("Product")
     .to_dict(orient="index")
 )
