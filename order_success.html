@@ -2,4 +2,12 @@
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Order Confirmed | PickPerfect</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"><link rel="stylesheet" href="style.css"></head>
-<body><div class="container" style="padding-top:150px;max-width:700px;"><div class="mono-card text-center py-5"><div class="display-4 mb-3"><i class="bi bi-check-circle"></i></div><span class="section-tag">Order Confirmed</span><h1 class="section-title">Thank you!</h1><p class="text-muted">Your demo order for <strong>{{ product }}</strong> ({{ quantity }} item{{ '' if quantity == 1 else 's' }}) has been placed.</p><h3 class="mt-3">₹{{ '{:,.2f}'.format(order_total) }}</h3><p class="small text-muted">No real payment was processed.</p><a href="/" class="btn btn-dark mt-3">Back to Recommendations</a></div></div></body></html>
+<body><div class="container" style="padding-top:150px;max-width:700px;"><div class="mono-card text-center py-5"><div class="display-4 mb-3"><i class="bi bi-check-circle"></i></div><span class="section-tag">Order Confirmed</span><h1 class="section-title">Thank you!</h1><p class="text-muted">Your demo order for <strong>{{ product }}</strong> ({{ quantity }} item{{ '' if quantity == 1 else 's' }}) has been placed.</p><h3 class="mt-3">₹{{ '{:,.2f}'.format(order_total) }}</h3><div class="text-start mt-4 border rounded-3 p-3 bg-light">
+<div class="d-flex justify-content-between"><span class="text-muted">Order ID</span><strong class="font-monospace">{{ order_id }}</strong></div>
+<div class="d-flex justify-content-between mt-2"><span class="text-muted">Item ordered</span><strong>{{ product }}</strong></div>
+<div class="d-flex justify-content-between mt-2"><span class="text-muted">Quantity</span><strong>{{ quantity }}</strong></div>
+<div class="d-flex justify-content-between mt-2"><span class="text-muted">Payment</span><strong>{{ payment_method }}</strong></div>
+<div class="d-flex justify-content-between mt-2"><span class="text-muted">Status</span><strong>{{ status }}</strong></div>
+<div class="d-flex justify-content-between mt-2"><span class="text-muted">Placed at</span><strong>{{ placed_at }}</strong></div>
+</div>
+<p class="small text-muted mt-3 mb-0">Simulation only — no real payment, inventory change, shipment, or external order was processed.</p><a href="/" class="btn btn-dark mt-3">Back to Recommendations</a></div></div></body></html>
