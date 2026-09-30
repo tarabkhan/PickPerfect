@@ -1,7 +1,0 @@
-<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PickPerfect | Order Confirmed</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"><link rel="stylesheet" href="app_style.css"></head>
-<body><main class="container text-center" style="padding-top:140px;max-width:800px;">
-<div class="glass-card p-5"><h1 class="display-5 fw-bold">Order Confirmed ✓</h1><p class="text-muted">Thank you, {{ order.name }}. Your demo order was placed successfully.</p>
-<div class="text-start mt-4 p-4 border rounded"><div class="d-flex justify-content-between"><span>Order ID</span><strong>{{ order.order_id }}</strong></div><div class="d-flex justify-content-between mt-2"><span>Payment</span><strong>{{ order.payment_method }}</strong></div><div class="d-flex justify-content-between mt-2"><span>Total</span><strong>₹{{ '{:,.2f}'.format(order.total) }}</strong></div></div>
-<a href="/" class="btn btn-dark mt-4">Continue Shopping</a></div></main></body></html>
