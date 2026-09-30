@@ -1,28 +1,26 @@
-import gc
-from datetime import datetime
 import os
-import secrets
+import gc
+import xai
+import ai_score
 import pandas as pd
 import torch
 import torch.nn as nn
-
+from datetime import datetime
+from uuid import uuid4
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-import ai_score
-import xai
-
 torch.set_grad_enabled(False)
-
 app = Flask(__name__, template_folder='.', static_folder='.', static_url_path='')
-app.secret_key = os.environ.get('SECRET_KEY', 'pickperfect-demo-secret-change-me')
+app.secret_key = os.environ.get('SECRET_KEY', 'pickperfect-dev-secret-change-in-production')
 
 # ==========================================================
-# 1. LIGHTWEIGHT DATA LOADING & PREPROCESSING
+# 1. DATA LOADING & PREPROCESSING
 # ==========================================================
 use_cols = ["Product", "Quantity", "Price", "CustomerID", "StockCode", "Time"]
-df = pd.read_csv("cleaned_data.csv", encoding="latin1", usecols=use_cols)
+DATA_FILE = "data.csv" if os.path.exists("data.csv") else "cleaned_data.csv"
+df = pd.read_csv(DATA_FILE, encoding="latin1", usecols=use_cols)
 
 df["StockCode"] = df["StockCode"].astype('int32')
 df["Quantity"] = df["Quantity"].astype('int16')
@@ -32,6 +30,7 @@ df["CustomerID"] = df["CustomerID"].astype('int32')
 train_size = int(len(df) * 0.80)
 train_df = df.iloc[:train_size]
 
+# Popularity Artifacts
 popular_products = train_df.groupby("Product")["Quantity"].sum().sort_values(ascending=False).index.tolist()
 
 train_df_time_hours = pd.to_datetime(train_df['Time'], format='%H:%M').dt.hour
@@ -75,7 +74,7 @@ del df, train_df
 gc.collect()
 
 # ==========================================================
-# 2. LIGHTWEIGHT NEURAL COLLABORATIVE FILTERING (NCF)
+# 2. NEURAL COLLABORATIVE FILTERING (NCF)
 # ==========================================================
 unique_customers = list(purchased_history.keys())
 unique_products = list(product_to_tfidf_idx.keys())
@@ -88,6 +87,7 @@ class NCF(nn.Module):
         super(NCF, self).__init__()
         self.user_embedding = nn.Embedding(num_users, embedding_dim)
         self.item_embedding = nn.Embedding(num_items, embedding_dim)
+        
         self.fc_layers = nn.Sequential(
             nn.Linear(embedding_dim * 2, 32),
             nn.ReLU(),
@@ -125,54 +125,214 @@ def popular_now_recommend(target_time=None, top_n=25):
         hour = target_time.hour
     else:
         hour = datetime.now().hour
+        
     return hourly_popularity.get(hour, popular_products)[:top_n]
 
 def ncf_recommend(customer_id, top_n=25):
     if customer_id not in user2idx:
         return []
+    
     user_idx = user2idx[customer_id]
     purchased = purchased_history.get(customer_id, set())
+    
     candidate_products = [p for p in unique_products if p not in purchased]
     candidate_indices = [product2idx[p] for p in candidate_products]
-    if not candidate_indices:
-        return []
+    
     u_tensor = torch.tensor([user_idx] * len(candidate_indices), dtype=torch.long)
     i_tensor = torch.tensor(candidate_indices, dtype=torch.long)
+
     ncf_model.eval()
     with torch.no_grad():
         scores = ncf_model(u_tensor, i_tensor).squeeze().detach().numpy()
+        
     top_indices = scores.argsort()[::-1][:top_n]
     return [candidate_products[i] for i in top_indices]
 
 def content_recommend(product_name, top_n=25):
     if product_name not in product_to_tfidf_idx:
         return []
+    
     idx = product_to_tfidf_idx[product_name]
     target_vec = tfidf_matrix[idx]
+    
     sim_scores = cosine_similarity(target_vec, tfidf_matrix).flatten()
     top_indices = sim_scores.argsort()[::-1][1:top_n + 1]
     return [product_series[i] for i in top_indices]
 
 def hybrid_recommend(product_name, customer_id=None, target_time=None, top_n=25, candidate_k=25):
     weights = {'popular': 0.2, 'ncf': 0.4, 'content': 0.4}
+    
     recs = {
         'popular': popular_now_recommend(target_time=target_time, top_n=candidate_k),
         'ncf': ncf_recommend(customer_id, top_n=candidate_k) if customer_id else [],
         'content': content_recommend(product_name, top_n=candidate_k) if product_name else []
     }
+
     combined_scores = {}
     for model_name, product_list in recs.items():
         weight = weights[model_name]
         for rank, prod in enumerate(product_list):
             rank_score = (candidate_k - rank) / candidate_k
             combined_scores[prod] = combined_scores.get(prod, 0.0) + (weight * rank_score)
+
     if product_name in combined_scores:
         del combined_scores[product_name]
+
     sorted_products = sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)
     return [prod for prod, score in sorted_products[:top_n]]
 
 # ==========================================================
-# 4. SCORING
+# 5. CART / BUY NOW
+# ==========================================================
+def _cart_items():
+    cart = session.get("cart", {})
+    items = []
+    total = 0.0
+    for product, qty in cart.items():
+        if product not in product_details:
+            continue
+        qty = max(1, int(qty))
+        details = product_details[product]
+        price = float(details.get("price", 0.0))
+        subtotal = price * qty
+        items.append({
+            "product": product,
+            "quantity": qty,
+            "price": price,
+            "subtotal": subtotal,
+            "stockcode": details.get("stockcode", "N/A")
+        })
+        total += subtotal
+    return items, total
+
+
+def _set_cart(cart):
+    session["cart"] = {str(k): max(1, int(v)) for k, v in cart.items() if int(v) > 0}
+    session.modified = True
+
+
+@app.context_processor
+def inject_cart_count():
+    cart = session.get("cart", {})
+    return {"cart_count": sum(int(q) for q in cart.values())}
+
+
+@app.post("/cart/add")
+def add_to_cart():
+    product = request.form.get("product", "").strip()
+    next_url = request.form.get("next", "")
+    if product not in product_details:
+        flash("Product could not be added to the cart.", "danger")
+        return redirect(next_url if next_url.startswith("/") else url_for("home"))
+
+    try:
+        quantity = max(1, int(request.form.get("quantity", 1)))
+    except (TypeError, ValueError):
+        quantity = 1
+
+    cart = session.get("cart", {})
+    cart[product] = int(cart.get(product, 0)) + quantity
+    _set_cart(cart)
+    flash(f"{product} added to your cart.", "success")
+    return redirect(next_url if next_url.startswith("/") else url_for("cart"))
+
+
+@app.get("/cart")
+def cart():
+    items, total = _cart_items()
+    return render_template("cart.html", cart_items=items, cart_total=total)
+
+
+@app.post("/cart/update")
+def update_cart():
+    cart = session.get("cart", {})
+    product = request.form.get("product", "")
+    try:
+        quantity = int(request.form.get("quantity", 1))
+    except (TypeError, ValueError):
+        quantity = 1
+    if product in cart:
+        if quantity <= 0:
+            cart.pop(product, None)
+        else:
+            cart[product] = quantity
+        _set_cart(cart)
+    return redirect(url_for("cart"))
+
+
+@app.post("/cart/remove")
+def remove_from_cart():
+    cart = session.get("cart", {})
+    cart.pop(request.form.get("product", ""), None)
+    _set_cart(cart)
+    return redirect(url_for("cart"))
+
+
+@app.post("/buy-now")
+def buy_now():
+    product = request.form.get("product", "").strip()
+    if product not in product_details:
+        flash("Product could not be found.", "danger")
+        return redirect(url_for("home"))
+    try:
+        quantity = max(1, int(request.form.get("quantity", 1)))
+    except (TypeError, ValueError):
+        quantity = 1
+    details = product_details[product]
+    price = float(details.get("price", 0.0))
+    return render_template(
+        "buy_now.html",
+        product=product,
+        quantity=quantity,
+        price=price,
+        subtotal=price * quantity,
+        stockcode=details.get("stockcode", "N/A")
+    )
+
+
+@app.post("/order/place")
+def place_order():
+    """Simulate a completed order without charging the user or calling a payment API."""
+    product = request.form.get("product", "").strip()
+    customer_name = request.form.get("name", "").strip()
+    delivery_address = request.form.get("address", "").strip()
+    payment_method = request.form.get("payment", "Cash on Delivery").strip()
+
+    try:
+        quantity = max(1, int(request.form.get("quantity", 1)))
+    except (TypeError, ValueError):
+        quantity = 1
+
+    if product not in product_details or not customer_name or not delivery_address:
+        flash("Please provide the required order details.", "danger")
+        return redirect(url_for("home"))
+
+    price = float(product_details[product].get("price", 0.0))
+    order_total = price * quantity
+    placed_at = datetime.now().strftime("%d %b %Y, %I:%M %p")
+    order_id = f"PP-{datetime.now():%Y%m%d}-{uuid4().hex[:8].upper()}"
+
+    order = {
+        "order_id": order_id,
+        "product": product,
+        "stockcode": product_details[product].get("stockcode", "N/A"),
+        "quantity": quantity,
+        "unit_price": price,
+        "order_total": order_total,
+        "customer_name": customer_name,
+        "delivery_address": delivery_address,
+        "payment_method": payment_method,
+        "status": "Confirmed (Demo)",
+        "placed_at": placed_at,
+    }
+    session["last_order"] = order
+    session.modified = True
+
+    return render_template("order_success.html", **order)
+
+
+# ==========================================================
+# 4. SCORING & ROUTES
 # ==========================================================
 def get_popular_score(product):
     if product in popular_products:
@@ -185,6 +345,7 @@ def get_ncf_score(customer_id, product):
         return None
     user_idx = user2idx[customer_id]
     prod_idx = product2idx[product]
+    
     u_tensor = torch.tensor([user_idx], dtype=torch.long)
     i_tensor = torch.tensor([prod_idx], dtype=torch.long)
     return ncf_model(u_tensor, i_tensor).item()
@@ -213,42 +374,10 @@ def update_product_details_ai(product_list, customer_id=None, reference_product=
             product_details[prod]["ai_score"] = score_res["final_ai_score"]
             product_details[prod]["explanation"] = xai.explain(score_res)
 
-# ==========================================================
-# 5. CART + DEMO CHECKOUT
-# ==========================================================
-def get_cart():
-    return session.setdefault("cart", {})
-
-def cart_count():
-    return sum(int(qty) for qty in get_cart().values())
-
-def build_cart_items():
-    items = []
-    total = 0.0
-    for product, quantity in get_cart().items():
-        if product not in product_details:
-            continue
-        quantity = max(1, min(99, int(quantity)))
-        price = float(product_details[product].get("price", 0))
-        subtotal = price * quantity
-        items.append({
-            "product": product,
-            "quantity": quantity,
-            "price": price,
-            "subtotal": subtotal,
-            "details": product_details[product],
-        })
-        total += subtotal
-    return items, total
-
-@app.context_processor
-def inject_cart_count():
-    return {"cart_count": cart_count()}
-
 @app.route("/")
 def home():
     return render_template(
-        "app_home.html",
+        "home.html",
         products=products,
         customers=customers,
         selected_customer=DEFAULT_CUSTOMER_ID,
@@ -275,7 +404,7 @@ def recommend():
     update_product_details_ai(all_recs, customer_id=customer_id, reference_product=selected_product)
 
     return render_template(
-        "app_recommend.html",
+        "recommend.html",
         products=products,
         customers=customers,
         selected_customer=customer_id,
@@ -287,135 +416,6 @@ def recommend():
         product_details=product_details
     )
 
-@app.route("/cart")
-def cart():
-    items, total = build_cart_items()
-    return render_template(
-        "app_cart.html",
-        cart_items=items,
-        cart_total=total,
-        customer_id=session.get("customer_id")
-    )
-
-@app.route("/cart/add", methods=["POST"])
-def add_to_cart():
-    product = request.form.get("product", "")
-    customer_id = request.form.get("customer_id")
-    if product in product_details:
-        cart = get_cart()
-        cart[product] = min(99, int(cart.get(product, 0)) + 1)
-        session["cart"] = cart
-        if customer_id:
-            try:
-                session["customer_id"] = int(customer_id)
-            except ValueError:
-                pass
-    return redirect(request.referrer or url_for("cart"))
-
-@app.route("/cart/update", methods=["POST"])
-def update_cart():
-    product = request.form.get("product", "")
-    try:
-        quantity = int(request.form.get("quantity", 1))
-    except (TypeError, ValueError):
-        quantity = 1
-    cart = get_cart()
-    if product in cart:
-        if quantity <= 0:
-            cart.pop(product, None)
-        else:
-            cart[product] = min(99, quantity)
-    session["cart"] = cart
-    return redirect(url_for("cart"))
-
-@app.route("/cart/remove", methods=["POST"])
-def remove_from_cart():
-    product = request.form.get("product", "")
-    cart = get_cart()
-    cart.pop(product, None)
-    session["cart"] = cart
-    return redirect(url_for("cart"))
-
-
-
-@app.post("/buy-now")
-def buy_now():
-    product = request.form.get("product", "").strip()
-    if product not in product_details:
-        flash("Product could not be found.", "danger")
-        return redirect(url_for("home"))
-    try:
-        quantity = max(1, int(request.form.get("quantity", 1)))
-    except (TypeError, ValueError):
-        quantity = 1
-    details = product_details[product]
-    price = float(details.get("price", 0.0))
-    return render_template(
-        "buy_now.html",
-        product=product,
-        quantity=quantity,
-        price=price,
-        subtotal=price * quantity,
-        stockcode=details.get("stockcode", "N/A")
-    )
-
-
-@app.post("/order/place")
-def place_order():
-    product = request.form.get("product", "").strip()
-    try:
-        quantity = max(1, int(request.form.get("quantity", 1)))
-    except (TypeError, ValueError):
-        quantity = 1
-    if product not in product_details:
-        return redirect(url_for("home"))
-    price = float(product_details[product].get("price", 0.0))
-    order_total = price * quantity
-    return render_template(
-        "order_success.html",
-        product=product,
-        quantity=quantity,
-        order_total=order_total
-    )
-
-@app.route("/checkout", methods=["GET", "POST"])
-def checkout():
-    items, total = build_cart_items()
-    if not items:
-        return redirect(url_for("cart"))
-
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        phone = request.form.get("phone", "").strip()
-        email = request.form.get("email", "").strip()
-        address = request.form.get("address", "").strip()
-        payment_method = request.form.get("payment_method", "Cash on Delivery")
-
-        if not all([name, phone, email, address]):
-            return render_template("app_checkout.html", cart_items=items, cart_total=total, error="Please complete all required fields.")
-
-        order = {
-            "order_id": "PP-" + datetime.now().strftime("%Y%m%d%H%M%S") + "-" + secrets.token_hex(2).upper(),
-            "name": name,
-            "phone": phone,
-            "email": email,
-            "address": address,
-            "payment_method": payment_method,
-            "total": total,
-        }
-        session["cart"] = {}
-        session["last_order"] = order
-        return redirect(url_for("order_success"))
-
-    return render_template("app_checkout.html", cart_items=items, cart_total=total)
-
-@app.route("/order-success")
-def order_success():
-    order = session.get("last_order")
-    if not order:
-        return redirect(url_for("home"))
-    return render_template("app_order_success.html", order=order)
-
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=True)
