@@ -287,6 +287,7 @@ def buy_now():
     price = float(details.get("price", 0.0))
     return render_template(
         "buy_now.html",
+        checkout_type="single",
         product=product,
         quantity=quantity,
         price=price,
@@ -295,41 +296,84 @@ def buy_now():
     )
 
 
+@app.post("/cart/buy-now")
+def cart_buy_now():
+    items, total = _cart_items()
+    if not items:
+        flash("Your cart is empty.", "warning")
+        return redirect(url_for("cart"))
+
+    return render_template(
+        "buy_now.html",
+        checkout_type="cart",
+        cart_items=items,
+        cart_total=total
+    )
+
+
 @app.post("/order/place")
 def place_order():
     """Simulate a completed order without charging the user or calling a payment API."""
-    product = request.form.get("product", "").strip()
+    checkout_type = request.form.get("checkout_type", "single")
     customer_name = request.form.get("name", "").strip()
     delivery_address = request.form.get("address", "").strip()
     payment_method = request.form.get("payment", "Cash on Delivery").strip()
 
-    try:
-        quantity = max(1, int(request.form.get("quantity", 1)))
-    except (TypeError, ValueError):
-        quantity = 1
-
-    if product not in product_details or not customer_name or not delivery_address:
+    if not customer_name or not delivery_address:
         flash("Please provide the required order details.", "danger")
-        return redirect(url_for("home"))
+        return redirect(url_for("cart" if checkout_type == "cart" else "home"))
 
-    price = float(product_details[product].get("price", 0.0))
-    order_total = price * quantity
     placed_at = datetime.now().strftime("%d %b %Y, %I:%M %p")
     order_id = f"PP-{datetime.now():%Y%m%d}-{uuid4().hex[:8].upper()}"
 
-    order = {
-        "order_id": order_id,
-        "product": product,
-        "stockcode": product_details[product].get("stockcode", "N/A"),
-        "quantity": quantity,
-        "unit_price": price,
-        "order_total": order_total,
-        "customer_name": customer_name,
-        "delivery_address": delivery_address,
-        "payment_method": payment_method,
-        "status": "Confirmed (Demo)",
-        "placed_at": placed_at,
-    }
+    if checkout_type == "cart":
+        items, order_total = _cart_items()
+        if not items:
+            flash("Your cart is empty.", "warning")
+            return redirect(url_for("cart"))
+
+        order = {
+            "order_id": order_id,
+            "items": items,
+            "order_total": order_total,
+            "customer_name": customer_name,
+            "delivery_address": delivery_address,
+            "payment_method": payment_method,
+            "status": "Confirmed (Demo)",
+            "placed_at": placed_at,
+            "checkout_type": "cart",
+        }
+
+        # The demo order is considered completed, so clear the cart.
+        session["cart"] = {}
+    else:
+        product = request.form.get("product", "").strip()
+        try:
+            quantity = max(1, int(request.form.get("quantity", 1)))
+        except (TypeError, ValueError):
+            quantity = 1
+
+        if product not in product_details:
+            flash("Product could not be found.", "danger")
+            return redirect(url_for("home"))
+
+        price = float(product_details[product].get("price", 0.0))
+        order_total = price * quantity
+        order = {
+            "order_id": order_id,
+            "product": product,
+            "stockcode": product_details[product].get("stockcode", "N/A"),
+            "quantity": quantity,
+            "unit_price": price,
+            "order_total": order_total,
+            "customer_name": customer_name,
+            "delivery_address": delivery_address,
+            "payment_method": payment_method,
+            "status": "Confirmed (Demo)",
+            "placed_at": placed_at,
+            "checkout_type": "single",
+        }
+
     session["last_order"] = order
     session.modified = True
 
